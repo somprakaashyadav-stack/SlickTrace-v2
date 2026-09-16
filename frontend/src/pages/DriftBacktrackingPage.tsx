@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Navigation2, AlertTriangle, ChevronRight, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { DriftSimulation } from '../types';
-import { Incident, PageType } from '../types/app';
+import { Incident } from '../types/app';
 
 interface DriftBacktrackingPageProps {
   drift?: DriftSimulation;
   activeIncident: Incident;
-  onNavigate: (page: PageType) => void;
 }
 
-export const DriftBacktrackingPage: React.FC<DriftBacktrackingPageProps> = ({ drift, activeIncident, onNavigate }) => {
+export const DriftBacktrackingPage: React.FC<DriftBacktrackingPageProps> = ({ drift, activeIncident }) => {
+  const navigate = useNavigate();
   const origin = drift?.origin_candidate;
 
   const engineParams = [
@@ -20,7 +21,7 @@ export const DriftBacktrackingPage: React.FC<DriftBacktrackingPageProps> = ({ dr
   ];
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-[#070c16]">
+    <div className="flex flex-col h-full overflow-y-auto bg-[#070B12]">
       {/* Page Header */}
       <div className="px-6 py-4 border-b border-slate-800/60 flex items-center justify-between">
         <div>
@@ -32,8 +33,8 @@ export const DriftBacktrackingPage: React.FC<DriftBacktrackingPageProps> = ({ dr
           <p className="text-xs text-slate-500">Backward Monte Carlo Dispersion (N=1,000 particles) driven by CMEMS Ocean Currents &amp; ERA5 10m Wind Vectors</p>
         </div>
         <button
-          onClick={() => onNavigate('vessel-attribution')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors"
+          onClick={() => navigate('/attribution')}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0284C7] hover:bg-sky-500 text-white text-xs font-bold transition-colors"
         >
           Vessel Attribution <ArrowRight className="w-4 h-4" />
         </button>

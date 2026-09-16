@@ -113,28 +113,22 @@ export const MapEngine: React.FC<MapEngineProps> = ({
         <MapController selectedPos={selectedVesselPos} />
         <LayersControl position="topright">
           {/* Base Maps */}
-          <LayersControl.BaseLayer checked name="Satellite Hybrid">
-            <TileLayer
-              url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-              attribution="&copy; Google Maps"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Bathymetry">
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}"
-              attribution="&copy; Esri"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Nautical">
-            <TileLayer
-              url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
-              attribution="&copy; OpenSeaMap"
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Optical">
+          <LayersControl.BaseLayer checked name="Satellite Imagery">
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               attribution="&copy; Esri"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Bathymetry / Ocean Depth">
+            <TileLayer
+              url="https://tiles.emodnet-bathymetry.eu/2020/baselayer/web_mercator/{z}/{x}/{y}.png"
+              attribution="&copy; EMODnet Bathymetry Consortium"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Light/Dark Carto Vector">
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution="&copy; CartoDB"
             />
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name="SAR Radar (Grayscale)">

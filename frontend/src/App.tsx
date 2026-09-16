@@ -1,8 +1,9 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './services/api';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
-import { PageType, Incident, MetoceanData, DEMO_INCIDENTS, DEMO_METOCEAN } from './types/app';
+import { Incident, MetoceanData, DEMO_INCIDENTS, DEMO_METOCEAN } from './types/app';
 import {
   SpillSummary,
   DriftSimulation,
@@ -31,14 +32,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   render() {
     if (this.state.error) {
       return (
-        <div className="flex h-screen w-screen bg-[#060b14] text-slate-100 items-center justify-center font-mono p-8">
-          <div className="max-w-xl w-full border border-rose-500/40 rounded-lg p-6 bg-rose-950/20 space-y-4">
-            <h1 className="text-rose-400 text-lg font-bold tracking-widest">⚠ SYSTEM ERROR</h1>
+        <div className="flex h-screen w-screen bg-[#070B12] text-[#F8FAFC] items-center justify-center font-mono p-8">
+          <div className="max-w-xl w-full border border-red-500/40 rounded-lg p-6 bg-red-950/20 space-y-4">
+            <h1 className="text-[#EF4444] text-lg font-bold tracking-widest">⚠ SYSTEM ERROR</h1>
             <p className="text-slate-300 text-sm">{this.state.error.message}</p>
             <pre className="text-xs text-slate-500 overflow-auto max-h-48">{this.state.error.stack}</pre>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-sm"
+              className="mt-4 px-4 py-2 bg-[#0284C7] hover:bg-sky-500 text-white rounded text-sm"
             >
               Reload
             </button>
@@ -61,7 +62,6 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   // App State
-  const [activePage, setActivePage] = useState<PageType>('dashboard');
   const [activeIncident, setActiveIncident] = useState<Incident>(DEMO_INCIDENTS[0]);
   const [metocean, setMetocean] = useState<MetoceanData>(DEMO_METOCEAN);
   const [darkMode, setDarkMode] = useState(true);
@@ -104,54 +104,44 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen bg-[#060b14] text-slate-100 items-center justify-center font-mono">
+      <div className="flex h-screen w-screen bg-[#070B12] text-[#F8FAFC] items-center justify-center font-mono">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-cyan-400 tracking-widest text-sm">INITIALIZING SLICKTRACE FORENSIC ENGINE...</p>
+          <div className="w-8 h-8 border-4 border-[#0284C7] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[#0284C7] tracking-widest text-sm">INITIALIZING SLICKTRACE FORENSIC ENGINE...</p>
           <p className="text-slate-500 text-xs">Connecting to {import.meta.env.VITE_API_URL || 'backend'}...</p>
         </div>
       </div>
     );
   }
 
-  const renderPage = () => {
-    switch (activePage) {
-      case 'dashboard':
-        return <DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />;
-      case 'drift-backtracking':
-        return <DriftBacktrackingPage drift={drift} activeIncident={activeIncident} onNavigate={setActivePage} />;
-      case 'vessel-attribution':
-        return <VesselAttributionPage ranking={ranking} vessels={vessels} />;
-      case 'evidence-center':
-        return <EvidenceCenterPage ranking={ranking} />;
-      case 'satellite-studio':
-        return <SatelliteStudioPage />;
-      case 'spill-analytics':
-        return <SpillAnalyticsPage ranking={ranking} physics={physics} />;
-      case 'sar-detection-lab':
-        return <SARDetectionLabPage />;
-      default:
-        return <DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />;
-    }
-  };
-
   return (
     <ErrorBoundary>
-      <div className={`flex h-screen w-screen overflow-hidden font-sans ${darkMode ? 'bg-[#060b14] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-        <Sidebar activePage={activePage} setActivePage={setActivePage} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <TopBar 
-            activeIncident={activeIncident} 
-            setActiveIncident={setActiveIncident} 
-            metocean={metocean} 
-            darkMode={darkMode} 
-            setDarkMode={setDarkMode} 
-          />
-          <main className="flex-1 overflow-hidden relative">
-            {renderPage()}
-          </main>
+      <BrowserRouter>
+        <div className={`flex h-screen w-screen overflow-hidden font-sans ${darkMode ? 'bg-[#070B12] text-[#F8FAFC]' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
+          <Sidebar darkMode={darkMode} />
+          <div className="flex-1 flex flex-col min-w-0">
+            <TopBar 
+              activeIncident={activeIncident} 
+              setActiveIncident={setActiveIncident} 
+              metocean={metocean} 
+              darkMode={darkMode} 
+              setDarkMode={setDarkMode} 
+            />
+            <main className="flex-1 overflow-hidden relative">
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />} />
+                <Route path="/sar-studio" element={<SatelliteStudioPage />} />
+                <Route path="/drift-engine" element={<DriftBacktrackingPage drift={drift} activeIncident={activeIncident} />} />
+                <Route path="/attribution" element={<VesselAttributionPage ranking={ranking} vessels={vessels} />} />
+                <Route path="/evidence" element={<EvidenceCenterPage ranking={ranking} />} />
+                <Route path="/analytics" element={<SpillAnalyticsPage ranking={ranking} physics={physics} />} />
+                <Route path="/edge-lab" element={<SARDetectionLabPage />} />
+              </Routes>
+            </main>
+          </div>
         </div>
-      </div>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 };
