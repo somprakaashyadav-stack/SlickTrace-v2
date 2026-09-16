@@ -1,7 +1,8 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { api } from './services/api';
-import { C4ISRDashboard } from './components/C4ISRDashboard';
-import { Incident, MetoceanData, DEMO_INCIDENTS, DEMO_METOCEAN } from './types/app';
+import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
+import { PageType, Incident, MetoceanData, DEMO_INCIDENTS, DEMO_METOCEAN } from './types/app';
 import {
   SpillSummary,
   DriftSimulation,
@@ -9,6 +10,15 @@ import {
   PhysicsVerificationResponse,
   FinalRankingResponse
 } from './types';
+
+// Pages
+import { DashboardPage } from './pages/DashboardPage';
+import { DriftBacktrackingPage } from './pages/DriftBacktrackingPage';
+import { VesselAttributionPage } from './pages/VesselAttributionPage';
+import { EvidenceCenterPage } from './pages/EvidenceCenterPage';
+import { SatelliteStudioPage } from './pages/SatelliteStudioPage';
+import { SpillAnalyticsPage } from './pages/SpillAnalyticsPage';
+import { SARDetectionLabPage } from './pages/SARDetectionLabPage';
 
 // ── Error Boundary ──────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -51,8 +61,10 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   // App State
+  const [activePage, setActivePage] = useState<PageType>('dashboard');
   const [activeIncident, setActiveIncident] = useState<Incident>(DEMO_INCIDENTS[0]);
-  const [metocean] = useState<MetoceanData>(DEMO_METOCEAN);
+  const [metocean, setMetocean] = useState<MetoceanData>(DEMO_METOCEAN);
+  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,28 +104,54 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen bg-[#050a12] text-slate-100 items-center justify-center font-mono">
+      <div className="flex h-screen w-screen bg-[#060b14] text-slate-100 items-center justify-center font-mono">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-cyan-400 tracking-widest text-sm">INITIALIZING SLICKTRACE C4ISR MARITIME RECONNAISSANCE...</p>
+          <p className="text-cyan-400 tracking-widest text-sm">INITIALIZING SLICKTRACE FORENSIC ENGINE...</p>
           <p className="text-slate-500 text-xs">Connecting to {import.meta.env.VITE_API_URL || 'backend'}...</p>
         </div>
       </div>
     );
   }
 
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard':
+        return <DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />;
+      case 'drift-backtracking':
+        return <DriftBacktrackingPage drift={drift} activeIncident={activeIncident} onNavigate={setActivePage} />;
+      case 'vessel-attribution':
+        return <VesselAttributionPage ranking={ranking} vessels={vessels} />;
+      case 'evidence-center':
+        return <EvidenceCenterPage ranking={ranking} />;
+      case 'satellite-studio':
+        return <SatelliteStudioPage />;
+      case 'spill-analytics':
+        return <SpillAnalyticsPage ranking={ranking} physics={physics} />;
+      case 'sar-detection-lab':
+        return <SARDetectionLabPage />;
+      default:
+        return <DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />;
+    }
+  };
+
   return (
     <ErrorBoundary>
-      <C4ISRDashboard 
-        spill={spill} 
-        drift={drift} 
-        vessels={vessels} 
-        physics={physics} 
-        ranking={ranking}
-        activeIncident={activeIncident}
-        setActiveIncident={setActiveIncident}
-        metocean={metocean}
-      />
+      <div className={`flex h-screen w-screen overflow-hidden font-sans ${darkMode ? 'bg-[#060b14] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+        <Sidebar activePage={activePage} setActivePage={setActivePage} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <TopBar 
+            activeIncident={activeIncident} 
+            setActiveIncident={setActiveIncident} 
+            metocean={metocean} 
+            darkMode={darkMode} 
+            setDarkMode={setDarkMode} 
+          />
+          <main className="flex-1 overflow-hidden relative">
+            {renderPage()}
+          </main>
+        </div>
+      </div>
     </ErrorBoundary>
   );
 };
