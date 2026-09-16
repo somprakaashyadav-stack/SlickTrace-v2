@@ -1,15 +1,16 @@
 import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './services/api';
-import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { HorizontalNav } from './components/HorizontalNav';
 import { Incident, MetoceanData, DEMO_INCIDENTS, DEMO_METOCEAN } from './types/app';
 import {
   SpillSummary,
   DriftSimulation,
   AISVesselTrack,
   PhysicsVerificationResponse,
-  FinalRankingResponse
+  FinalRankingResponse,
+  CandidatePriority
 } from './types';
 
 // Pages
@@ -67,16 +68,25 @@ export const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
+    // Dynamic update of Metocean Data based on active incident to simulate real telemetry sync
+    setMetocean({
+      ...DEMO_METOCEAN,
+      lat: activeIncident.lat,
+      lon: activeIncident.lon,
+      windSpeed: activeIncident.id === 'INC-01' ? 4.2 : 5.1,
+      currentSpeed: activeIncident.id === 'INC-01' ? 0.34 : 0.45
+    });
+
     const fetchData = async () => {
       try {
         setLoading(true);
         // Use the actual demo spill ID expected by the backend
-        const spillId = "SLICK-IN-2026-009"; 
+        const spillId = activeIncident.id; 
         
         const [
           spillData,
           driftData,
-          vesselData
+          apiVesselData
         ] = await Promise.all([
           api.getSpillSummary().catch(() => undefined),
           api.runDriftSimulation("test", 24, "backward").catch(() => undefined),
@@ -84,14 +94,55 @@ export const App: React.FC = () => {
         ]);
 
         // Run these sequentially because both trigger heavy physics simulations
-        const physicsData = await api.getPhysicsVerification(spillId).catch(() => undefined);
-        const rankData = await api.getFinalRanking(spillId).catch(() => undefined);
+        const physicsData = await api.getPhysicsVerification("SLICK-IN-2026-009").catch(() => undefined);
+        let rankData = await api.getFinalRanking("SLICK-IN-2026-009").catch(() => undefined);
+
+        // --- MOCK OVERRIDES FOR SPECIFIC INCIDENTS ---
+        let finalVessels: AISVesselTrack[] = [];
+        let finalRanking: FinalRankingResponse | undefined = rankData;
+
+        if (activeIncident.id === 'INC-01') {
+          // Mumbai High Offshore Basin (Crude Oil)
+          finalVessels = [
+            { mmsi: 419001122, vessel_name: "MT DESH SHANTI", vessel_type: "Crude Tanker", flag: "India", imo: 9345678, closest_distance_km: 1.5, time_of_closest_approach: new Date().toISOString(), path: [{lat: 18.92, lon: 72.35, timestamp: new Date().toISOString(), speed_knots: 4.2, heading_deg: 120, course_deg: 120}] },
+            { mmsi: 352001444, vessel_name: "PACIFIC ENERGY", vessel_type: "VLCC Tanker", flag: "Panama", imo: 9456789, closest_distance_km: 6.3, time_of_closest_approach: new Date().toISOString(), path: [{lat: 18.95, lon: 72.38, timestamp: new Date().toISOString(), speed_knots: 13.5, heading_deg: 180, course_deg: 180}] },
+            { mmsi: 419009999, vessel_name: "Matsya Sagar 09", vessel_type: "Wooden Trawler", flag: "India", closest_distance_km: 2.0, time_of_closest_approach: new Date().toISOString(), path: [{lat: 18.91, lon: 72.33, timestamp: new Date().toISOString(), speed_knots: 3.2, heading_deg: 90, course_deg: 90}] },
+          ];
+          finalRanking = {
+            spill_id: activeIncident.id,
+            alpha_weight: 0.5,
+            beta_weight: 0.5,
+            rankings: [
+              { rank: 1, mmsi: 419001122, vessel_name: "MT DESH SHANTI", vessel_type: "Crude Tanker", initial_score: 95, physics_score: 87, final_score: 91, rank_change: 0, evidence_for: ["Speed Anomaly: 14.8kn -> 4.2kn", "AIS Gap: 4h 15m"], evidence_against: [], ais_reliability: "LOW", investigation_priority: "HIGH", rank_change_explanation: "" },
+              { rank: 2, mmsi: 352001444, vessel_name: "PACIFIC ENERGY", vessel_type: "VLCC Tanker", initial_score: 40, physics_score: 50, final_score: 45, rank_change: 0, evidence_for: ["Normal antenna switch"], evidence_against: [], ais_reliability: "HIGH", investigation_priority: "MEDIUM", rank_change_explanation: "" },
+              { rank: 3, mmsi: 419009999, vessel_name: "Matsya Sagar 09", vessel_type: "Wooden Trawler", initial_score: 10, physics_score: 14, final_score: 12, rank_change: 0, evidence_for: ["Artisanal Craft (Exempt)"], evidence_against: [], ais_reliability: "HIGH", investigation_priority: "LOW", rank_change_explanation: "" },
+            ]
+          };
+        } else if (activeIncident.id === 'INC-02') {
+          // Chennai-Ennore Energy Corridor (Heavy Bunker Fuel)
+          finalVessels = [
+            { mmsi: 636015555, vessel_name: "MV OCEAN GLORY", vessel_type: "Bulk Carrier", flag: "Liberia", closest_distance_km: 2.6, time_of_closest_approach: new Date().toISOString(), path: [{lat: 13.23, lon: 80.33, timestamp: new Date().toISOString(), speed_knots: 12.1, heading_deg: 45, course_deg: 45}] },
+            { mmsi: 419003344, vessel_name: "SS CHENNAI TRADER", vessel_type: "Container Ship", flag: "India", closest_distance_km: 8.9, time_of_closest_approach: new Date().toISOString(), path: [{lat: 13.25, lon: 80.35, timestamp: new Date().toISOString(), speed_knots: 18.2, heading_deg: 90, course_deg: 90}] },
+          ];
+          finalRanking = {
+            spill_id: activeIncident.id,
+            alpha_weight: 0.5,
+            beta_weight: 0.5,
+            rankings: [
+              { rank: 1, mmsi: 636015555, vessel_name: "MV OCEAN GLORY", vessel_type: "Bulk Carrier", initial_score: 80, physics_score: 88, final_score: 84, rank_change: 0, evidence_for: ["AIS Gap: 3h 40m"], evidence_against: [], ais_reliability: "LOW", investigation_priority: "HIGH", rank_change_explanation: "" },
+              { rank: 2, mmsi: 419003344, vessel_name: "SS CHENNAI TRADER", vessel_type: "Container Ship", initial_score: 20, physics_score: 24, final_score: 22, rank_change: 0, evidence_for: ["Steady transit"], evidence_against: [], ais_reliability: "HIGH", investigation_priority: "LOW", rank_change_explanation: "" },
+            ]
+          };
+        } else {
+          // Generic fallback
+          finalVessels = apiVesselData || [];
+        }
 
         if (spillData) setSpill(spillData);
         if (driftData) setDrift(driftData);
-        if (vesselData) setVessels(vesselData);
+        setVessels(finalVessels);
         if (physicsData) setPhysics(physicsData);
-        if (rankData) setRanking(rankData);
+        if (finalRanking) setRanking(finalRanking);
       } catch (err) {
         console.error('Error fetching API data:', err);
       } finally {
@@ -117,29 +168,27 @@ export const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <div className={`flex h-screen w-screen overflow-hidden font-sans ${darkMode ? 'bg-[#070B12] text-[#F8FAFC]' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
-          <Sidebar darkMode={darkMode} />
-          <div className="flex-1 flex flex-col min-w-0">
-            <TopBar 
-              activeIncident={activeIncident} 
-              setActiveIncident={setActiveIncident} 
-              metocean={metocean} 
-              darkMode={darkMode} 
-              setDarkMode={setDarkMode} 
-            />
-            <main className="flex-1 overflow-hidden relative">
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />} />
-                <Route path="/sar-studio" element={<SatelliteStudioPage />} />
-                <Route path="/drift-engine" element={<DriftBacktrackingPage drift={drift} activeIncident={activeIncident} />} />
-                <Route path="/attribution" element={<VesselAttributionPage ranking={ranking} vessels={vessels} />} />
-                <Route path="/evidence" element={<EvidenceCenterPage ranking={ranking} />} />
-                <Route path="/analytics" element={<SpillAnalyticsPage ranking={ranking} physics={physics} />} />
-                <Route path="/edge-lab" element={<SARDetectionLabPage />} />
-              </Routes>
-            </main>
-          </div>
+        <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans ${darkMode ? 'bg-[#070B12] text-[#F8FAFC]' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
+          <TopBar 
+            activeIncident={activeIncident} 
+            setActiveIncident={setActiveIncident} 
+            metocean={metocean} 
+            darkMode={darkMode} 
+            setDarkMode={setDarkMode} 
+          />
+          <HorizontalNav darkMode={darkMode} />
+          <main className="flex-1 overflow-hidden relative">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage spill={spill} drift={drift} vessels={vessels} physics={physics} ranking={ranking} activeIncident={activeIncident} />} />
+              <Route path="/sar-studio" element={<SatelliteStudioPage />} />
+              <Route path="/drift-engine" element={<DriftBacktrackingPage drift={drift} activeIncident={activeIncident} />} />
+              <Route path="/attribution" element={<VesselAttributionPage ranking={ranking} vessels={vessels} />} />
+              <Route path="/evidence" element={<EvidenceCenterPage ranking={ranking} />} />
+              <Route path="/analytics" element={<SpillAnalyticsPage ranking={ranking} physics={physics} />} />
+              <Route path="/edge-lab" element={<SARDetectionLabPage />} />
+            </Routes>
+          </main>
         </div>
       </BrowserRouter>
     </ErrorBoundary>

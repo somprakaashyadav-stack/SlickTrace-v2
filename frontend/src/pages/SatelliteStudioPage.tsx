@@ -24,9 +24,9 @@ const SPECTRAL_LAYERS = [
 ];
 
 const CONFIDENCE_SCORES = [
-  { label: 'U-Net ResNet-50 AI Segment', score: 0.87, desc: 'Val IoU 0.83 on Sentinel-1 SAR benchmarks' },
-  { label: 'ERA5 Wind Speed Window', score: 0.91, desc: '4.2 m/s: strictly inside [3.0, 12.0] m/s validity window' },
-  { label: 'Biogenic Algal Exclusion', score: 0.78, desc: 'Chlorophyll-a below bloom threshold (MODIS check)' },
+  { label: 'ERA5 Wind Validity Window', score: 1.0, desc: '4.2 m/s - Optimal (inside 3.0 - 12.0 m/s)' },
+  { label: 'Floating Algae Index (FAI)', score: 0.89, desc: '0.11 - Below bloom threshold (organic rejected)' },
+  { label: 'SWIR Hydrocarbon Emulsion', score: 0.84, desc: '0.84 - Confirmed mineral crude' },
 ];
 
 export const SatelliteStudioPage: React.FC = () => {
@@ -143,7 +143,7 @@ export const SatelliteStudioPage: React.FC = () => {
         {/* Page Header */}
         <div className="px-6 py-3 border-b border-slate-800/60 flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-black text-slate-100">Varuna-Drishti Satellite Studio &amp; SAR Look-Alike Validation</h1>
+            <h1 className="text-sm font-black text-slate-100">Sensor Analysis &amp; Look-Alike Validation</h1>
             <p className="text-[10px] text-slate-500">Vedic maritime surveillance · Mumbai High Offshore Basin (18.743°N, 71.218°E) · Calibrated SAR backscatter cross-sections &amp; look-alike suppression</p>
           </div>
           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export const SatelliteStudioPage: React.FC = () => {
               <ExternalLink className="w-3 h-3" /> Copernicus Browser
             </button>
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 text-white text-[10px] font-bold hover:bg-cyan-500 transition-colors">
-              Drift Analysis →
+              <Info className="w-3 h-3" /> Apply ROI Super-Resolution
             </button>
           </div>
         </div>
@@ -286,7 +286,7 @@ export const SatelliteStudioPage: React.FC = () => {
                   <p className="text-[11px] font-bold text-slate-200">Composite Probability</p>
                   <p className="text-xl font-black font-mono text-emerald-400">{compositeScore}</p>
                 </div>
-                <p className="text-[9px] text-slate-500">Classified: Highly Likely Mineral Oil Slick</p>
+                <p className="text-[9px] font-bold text-cyan-400 mt-1">CONFIRMED MINERAL OIL SPILL</p>
                 <div className="h-2 bg-slate-800 rounded-full overflow-hidden mt-2">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${parseFloat(compositeScore) * 100}%` }} />
                 </div>

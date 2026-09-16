@@ -32,7 +32,8 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
       </div>
 
       <div className="flex-1 flex items-center gap-4">
-        <span className="text-xs font-mono text-slate-400 w-12 text-right">-24h</span>
+        <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider whitespace-nowrap">Lagrangian Time Scrubber</span>
+        <span className="text-xs font-mono text-[#64748B] w-14 text-right">T - 72h</span>
         <input 
           type="range" 
           min="0" 
@@ -42,9 +43,9 @@ export const TimelineControls: React.FC<TimelineControlsProps> = ({
             setIsPlaying(false);
             setCurrentTime(parseInt(e.target.value));
           }}
-          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+          className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#0284C7]"
         />
-        <span className="text-xs font-mono text-slate-400 w-12">NOW</span>
+        <span className="text-xs font-mono text-[#64748B] w-12">T0</span>
       </div>
     </div>
   );

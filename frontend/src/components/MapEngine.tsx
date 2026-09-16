@@ -139,23 +139,11 @@ export const MapEngine: React.FC<MapEngineProps> = ({
           </LayersControl.BaseLayer>
 
           {/* Overlays */}
-          <LayersControl.Overlay checked name="Active Incidents (Fleet)">
-            <LayerGroup>
-              {DEMO_INCIDENTS.map(inc => (
-                <Marker 
-                  key={inc.id}
-                  position={[inc.lat, inc.lon]}
-                  icon={createIncidentIcon(inc.color)}
-                >
-                  <Tooltip permanent direction="top" offset={[0, -10]} className="bg-slate-900 border-slate-700 text-slate-200 font-mono text-[10px]">
-                    <span style={{ color: inc.color }}>{inc.id}</span> - {inc.oilType}
-                  </Tooltip>
-                </Marker>
-              ))}
-            </LayerGroup>
+          <LayersControl.Overlay checked name="Indian Sovereign Outline & 200 NM EEZ">
+            <LayerGroup />{/* Mock empty layer for demo */}
           </LayersControl.Overlay>
 
-          <LayersControl.Overlay checked name="Detected Spill Polygon">
+          <LayersControl.Overlay checked name="Detected Slick Footprint (T0 Polygon)">
             {polygonCoords.length > 0 && (
               <Polygon 
                 positions={polygonCoords} 
@@ -166,7 +154,7 @@ export const MapEngine: React.FC<MapEngineProps> = ({
             )}
           </LayersControl.Overlay>
 
-          <LayersControl.Overlay checked name="Origin Uncertainty Cone">
+          <LayersControl.Overlay checked name="Lagrangian Reverse Dispersion Cone">
             {drift?.origin_candidate && (
               <CircleMarker
                 center={[drift.origin_candidate.Y0, drift.origin_candidate.X0]}
@@ -176,6 +164,10 @@ export const MapEngine: React.FC<MapEngineProps> = ({
                 <Tooltip>Estimated Origin Zone (T-22h)</Tooltip>
               </CircleMarker>
             )}
+          </LayersControl.Overlay>
+
+          <LayersControl.Overlay checked name="Forward Booming Vector (T+24h)">
+            <LayerGroup />{/* Mock empty layer for demo */}
           </LayersControl.Overlay>
 
           <LayersControl.Overlay checked name="Backward Particles">
@@ -191,7 +183,7 @@ export const MapEngine: React.FC<MapEngineProps> = ({
             </LayerGroup>
           </LayersControl.Overlay>
 
-          <LayersControl.Overlay checked name="AIS Tracks">
+          <LayersControl.Overlay checked name="AIS Vessel Trajectory Tracks">
             <LayerGroup>
               {vessels.map(vessel => {
                 const positions = vessel.path.map(p => [p.lat, p.lon] as [number, number]);
@@ -229,16 +221,6 @@ export const MapEngine: React.FC<MapEngineProps> = ({
                 );
               })}
             </LayerGroup>
-          </LayersControl.Overlay>
-
-          <LayersControl.Overlay name="Borders & EEZ">
-            <LayerGroup />{/* Mock empty layer */}
-          </LayersControl.Overlay>
-          <LayersControl.Overlay name="Seamarks">
-            <LayerGroup />{/* Mock empty layer */}
-          </LayersControl.Overlay>
-          <LayersControl.Overlay checked name="AI Analysis">
-            <LayerGroup />{/* Mock empty layer */}
           </LayersControl.Overlay>
         </LayersControl>
       </MapContainer>
