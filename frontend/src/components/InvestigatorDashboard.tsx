@@ -61,6 +61,9 @@ export const InvestigatorDashboard: React.FC<InvestigatorDashboardProps> = ({
         <LeaderboardPanel 
           ranking={ranking}
           vessels={vessels}
+          spill={spill}
+          drift={drift}
+          physics={physics}
           selectedMmsi={selectedMmsi}
           setSelectedMmsi={setSelectedMmsi}
         />
