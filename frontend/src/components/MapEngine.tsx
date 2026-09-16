@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Polygon, CircleMarker, Polyline, Tooltip, LayersControl, LayerGroup, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { SpillSummary, DriftSimulation, AISVesselTrack, PhysicsVerificationResponse } from '../types';
+import { DEMO_INCIDENTS } from '../types/app';
 
 interface MapEngineProps {
   spill?: SpillSummary;
@@ -28,6 +29,15 @@ const createCustomIcon = (color: string) => {
     html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
     iconSize: [12, 12],
     iconAnchor: [6, 6]
+  });
+};
+
+const createIncidentIcon = (color: string) => {
+  return L.divIcon({
+    className: 'incident-icon',
+    html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 2px; border: 2px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.8); transform: rotate(45deg);"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
   });
 };
 
@@ -72,11 +82,9 @@ export const MapEngine: React.FC<MapEngineProps> = ({
     if (!drift || !drift.trajectories || drift.trajectories.length === 0) return [];
     const firstTraj = drift.trajectories[0];
     if (!firstTraj || firstTraj.length === 0) return [];
-    // Calculate which step to show based on 0-100% (assuming max steps = duration)
-    // Timeline maps 0 to the start of backward drift, 100 to NOW.
-    // So step = currentTime / 100 * total_steps
+    
     const maxStep = Math.max(...firstTraj.map(t => t.step));
-    const currentStep = Math.floor((1 - (currentTime / 100)) * maxStep); // Drift is backward, so 100% (NOW) = step 0
+    const currentStep = Math.floor((1 - (currentTime / 100)) * maxStep);
     
     return drift.trajectories.map(traj => {
       const point = traj.find(p => p.step === currentStep) || traj[0];
@@ -111,14 +119,48 @@ export const MapEngine: React.FC<MapEngineProps> = ({
               attribution="&copy; Google Maps"
             />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Standard Map">
+          <LayersControl.BaseLayer name="Bathymetry">
             <TileLayer
-              url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-              attribution="&copy; Google Maps"
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}"
+              attribution="&copy; Esri"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Nautical">
+            <TileLayer
+              url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
+              attribution="&copy; OpenSeaMap"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Optical">
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="&copy; Esri"
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="SAR Radar (Grayscale)">
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution="&copy; CartoDB"
             />
           </LayersControl.BaseLayer>
 
           {/* Overlays */}
+          <LayersControl.Overlay checked name="Active Incidents (Fleet)">
+            <LayerGroup>
+              {DEMO_INCIDENTS.map(inc => (
+                <Marker 
+                  key={inc.id}
+                  position={[inc.lat, inc.lon]}
+                  icon={createIncidentIcon(inc.color)}
+                >
+                  <Tooltip permanent direction="top" offset={[0, -10]} className="bg-slate-900 border-slate-700 text-slate-200 font-mono text-[10px]">
+                    <span style={{ color: inc.color }}>{inc.id}</span> - {inc.oilType}
+                  </Tooltip>
+                </Marker>
+              ))}
+            </LayerGroup>
+          </LayersControl.Overlay>
+
           <LayersControl.Overlay checked name="Detected Spill Polygon">
             {polygonCoords.length > 0 && (
               <Polygon 
@@ -137,7 +179,7 @@ export const MapEngine: React.FC<MapEngineProps> = ({
                 radius={40}
                 pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.2, weight: 1, dashArray: '4, 4' }}
               >
-                <Tooltip>Estimated Origin Zone</Tooltip>
+                <Tooltip>Estimated Origin Zone (T-22h)</Tooltip>
               </CircleMarker>
             )}
           </LayersControl.Overlay>
@@ -161,10 +203,6 @@ export const MapEngine: React.FC<MapEngineProps> = ({
                 const positions = vessel.path.map(p => [p.lat, p.lon] as [number, number]);
                 const isSelected = selectedMmsi === vessel.mmsi;
                 
-                // Animate position based on time
-                // For simplicity, we just show the whole track and a marker at the "current" position
-                // Assuming timeline 0 = T-24h, 100 = NOW.
-                // We map this to the array of points (rough approximation for demo)
                 const pointIdx = Math.floor((currentTime / 100) * (positions.length - 1));
                 const currentPos = positions[pointIdx] || positions[positions.length - 1];
 
@@ -198,27 +236,45 @@ export const MapEngine: React.FC<MapEngineProps> = ({
               })}
             </LayerGroup>
           </LayersControl.Overlay>
+
+          <LayersControl.Overlay name="Borders & EEZ">
+            <LayerGroup />{/* Mock empty layer */}
+          </LayersControl.Overlay>
+          <LayersControl.Overlay name="Seamarks">
+            <LayerGroup />{/* Mock empty layer */}
+          </LayersControl.Overlay>
+          <LayersControl.Overlay checked name="AI Analysis">
+            <LayerGroup />{/* Mock empty layer */}
+          </LayersControl.Overlay>
         </LayersControl>
       </MapContainer>
 
       {/* Map Overlay Controls / Legend */}
-      <div className="absolute bottom-6 left-6 z-[1000] bg-navy-900/90 backdrop-blur border border-slate-800 rounded-lg p-3 font-mono text-[10px] space-y-2 pointer-events-none">
-        <h4 className="font-bold text-slate-300 border-b border-slate-800 pb-1 mb-2">TACTICAL LEGEND</h4>
+      <div className="absolute bottom-6 left-6 z-[1000] bg-slate-900/90 backdrop-blur border border-slate-800 rounded-lg p-3 font-mono text-[10px] space-y-2 pointer-events-none shadow-xl">
+        <h4 className="font-bold text-slate-300 border-b border-slate-800 pb-1 mb-2">TACTICAL DRIFT LEGEND</h4>
         <div className="flex items-center gap-2 text-slate-400">
           <div className="w-3 h-3 bg-sky-500/40 border border-sky-500"></div>
-          <span>Satellite Detection</span>
+          <span>Current Spill (T0 Monitored)</span>
+        </div>
+        <div className="flex items-center gap-2 text-slate-400">
+          <div className="w-3 h-3 rounded-full bg-cyan-400/30 border border-cyan-400 border-dashed"></div>
+          <span>Predicted Drift (T+24h Forecast)</span>
+        </div>
+        <div className="flex items-center gap-2 text-slate-400">
+          <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-dashed bg-amber-500/20"></div>
+          <span>Discharge Origin (T-22h Source)</span>
         </div>
         <div className="flex items-center gap-2 text-slate-400">
           <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-          <span>Backward Particles</span>
+          <span>Reverse Drift Track (Past 22h)</span>
         </div>
         <div className="flex items-center gap-2 text-slate-400">
-          <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-dashed"></div>
-          <span>Origin Uncertainty</span>
+          <div className="w-4 h-0.5 bg-purple-500 border-t border-b border-purple-500 border-dashed"></div>
+          <span>Suspect AIS Silence: Gap Segment</span>
         </div>
         <div className="flex items-center gap-2 text-slate-400 mt-2 pt-2 border-t border-slate-800">
           <div className="w-3 h-3 rounded-full bg-emerald-500 border border-white"></div>
-          <span className="text-emerald-400">Selected Candidate</span>
+          <span className="text-emerald-400">Selected Prime Suspect</span>
         </div>
       </div>
     </div>
