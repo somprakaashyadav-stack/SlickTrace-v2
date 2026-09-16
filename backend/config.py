@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # Host & Cors
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    FRONTEND_URL: str = "http://localhost:5173"
+    FRONTEND_URL: str = "https://slick-tracev2.vercel.app"
 
     class Config:
         env_file = ".env"
