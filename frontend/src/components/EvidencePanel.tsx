@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Crosshair, AlertTriangle, ArrowUpCircle, ArrowDownCircle, MinusCircle, FileText, Layers } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, MinusCircle, FileText, Layers, Loader2 } from 'lucide-react';
 import { FinalRankingResponse, PhysicsVerificationResponse } from '../types';
 import { PhysicsVerificationModal } from './PhysicsVerificationModal';
+import { api } from '../services/api';
 
 interface EvidencePanelProps {
   ranking?: FinalRankingResponse;
@@ -11,6 +12,42 @@ interface EvidencePanelProps {
 
 export const EvidencePanel: React.FC<EvidencePanelProps> = ({ ranking, physics, selectedMmsi }) => {
   const [showPhysicsModal, setShowPhysicsModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExportDossier = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const report = await api.getEvidenceReport();
+
+      // Enrich with current suspect context
+      const exportData = {
+        ...report,
+        exported_at: new Date().toISOString(),
+        selected_suspect: suspect,
+        all_rankings: ranking?.rankings ?? [],
+      };
+
+      // Trigger browser download as JSON file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `slicktrace-dossier-${report.incident_id ?? 'report'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+      setExportError('Export failed. Check backend connection.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (!ranking) {
     return (
@@ -153,10 +190,20 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ ranking, physics, 
           >
             <Layers className="w-4 h-4" /> Physics Engine
           </button>
-          <button className="w-full py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-[10px] uppercase tracking-wider transition-colors flex flex-col justify-center items-center gap-1">
-            <FileText className="w-4 h-4" /> Export Dossier
+          <button
+            onClick={handleExportDossier}
+            disabled={exporting}
+            className="w-full py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold text-[10px] uppercase tracking-wider transition-colors flex flex-col justify-center items-center gap-1"
+          >
+            {exporting
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Exporting...</>
+              : <><FileText className="w-4 h-4" /> Export Dossier</>
+            }
           </button>
         </div>
+        {exportError && (
+          <p className="text-rose-400 text-[10px] font-mono mt-2 text-center">{exportError}</p>
+        )}
       </div>
 
       {showPhysicsModal && physics && (
