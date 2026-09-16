@@ -3,6 +3,7 @@ import { ArrowUpCircle, ArrowDownCircle, MinusCircle, FileText, Layers, Loader2 
 import { FinalRankingResponse, PhysicsVerificationResponse } from '../types';
 import { PhysicsVerificationModal } from './PhysicsVerificationModal';
 import { api } from '../services/api';
+import jsPDF from 'jspdf';
 
 interface EvidencePanelProps {
   ranking?: FinalRankingResponse;
@@ -20,34 +21,245 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ ranking, physics, 
     setExportError(null);
     try {
       const report = await api.getEvidenceReport();
+      const rankings = ranking?.rankings ?? [];
+      const now = new Date();
 
-      // Enrich with current suspect context
-      const exportData = {
-        ...report,
-        exported_at: new Date().toISOString(),
-        selected_suspect: suspect,
-        all_rankings: ranking?.rankings ?? [],
+      // ── Init PDF ──────────────────────────────────────────────────────────
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const W = 210; // A4 width
+      let y = 0;
+
+      const addPage = () => { doc.addPage(); y = 15; };
+      const checkY = (needed: number) => { if (y + needed > 275) addPage(); };
+
+      // ── Helper: section header ────────────────────────────────────────────
+      const sectionHeader = (title: string) => {
+        checkY(12);
+        doc.setFillColor(6, 11, 20);
+        doc.rect(14, y, W - 28, 8, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(56, 189, 248); // cyan-400
+        doc.text(title, 18, y + 5.5);
+        y += 12;
       };
 
-      // Trigger browser download as JSON file
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json',
+      const field = (label: string, value: string, indent = 18) => {
+        checkY(7);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184); // slate-400
+        doc.text(label, indent, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(226, 232, 240); // slate-200
+        doc.text(value, indent + 45, y);
+        y += 6;
+      };
+
+      // ── PAGE 1 HEADER ─────────────────────────────────────────────────────
+      // Dark banner
+      doc.setFillColor(6, 11, 20);
+      doc.rect(0, 0, W, 40, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(56, 189, 248);
+      doc.text('SLICKTRACE v2', 14, 16);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text('Maritime Oil Spill Forensic Intelligence Platform', 14, 23);
+
+      doc.setFontSize(8);
+      doc.setTextColor(244, 63, 94); // rose
+      doc.text('CONFIDENTIAL — MARPOL ENFORCEMENT DOSSIER', 14, 30);
+
+      // Dossier ref top-right
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Ref: ${report.dossier_reference ?? 'N/A'}`, W - 14, 16, { align: 'right' });
+      doc.text(`Generated: ${now.toUTCString()}`, W - 14, 22, { align: 'right' });
+
+      y = 48;
+
+      // ── INCIDENT METADATA ─────────────────────────────────────────────────
+      sectionHeader('01  INCIDENT METADATA');
+      field('Incident ID', report.incident_id ?? 'N/A');
+      field('Dossier Reference', report.dossier_reference ?? 'N/A');
+      field('Verification Status', report.verification_status ?? 'N/A');
+      field('Generated At', report.generated_at ?? now.toISOString());
+      field('Exported At', now.toISOString());
+
+      // ── SPILL SUMMARY ─────────────────────────────────────────────────────
+      sectionHeader('02  DETECTED SPILL SUMMARY');
+      const spill = report.spill_summary;
+      if (spill) {
+        field('Scene ID', spill.scene_id ?? 'N/A');
+        field('Satellite', spill.satellite ?? 'N/A');
+        field('Detection Time', spill.detection_time ?? 'N/A');
+        field('Center Coordinates', `${spill.center_lat?.toFixed(4)}°N, ${spill.center_lon?.toFixed(4)}°E`);
+        field('Area', `${spill.area_sq_km?.toFixed(2)} km²`);
+        field('Est. Volume', `${spill.estimated_volume_m3?.toFixed(0)} m³`);
+        field('Confidence Score', `${((spill.confidence_score ?? 0) * 100).toFixed(1)}%`);
+      } else {
+        doc.setFontSize(8); doc.setTextColor(148,163,184);
+        doc.text('Spill summary unavailable.', 18, y); y += 6;
+      }
+
+      // ── DRIFT PHYSICS ORIGIN ──────────────────────────────────────────────
+      sectionHeader('03  DRIFT PHYSICS — ESTIMATED ORIGIN');
+      const drift = report.drift_physics_summary;
+      if (drift) {
+        field('Origin Centroid', `${drift.center_lat?.toFixed(4)}°N, ${drift.center_lon?.toFixed(4)}°E`);
+        field('Est. Release Time', drift.estimated_release_time ?? 'N/A');
+        field('Major Axis', `${drift.major_axis_km?.toFixed(2)} km`);
+        field('Minor Axis', `${drift.minor_axis_km?.toFixed(2)} km`);
+        field('Orientation', `${drift.orientation_deg?.toFixed(1)}°`);
+      } else {
+        doc.setFontSize(8); doc.setTextColor(148,163,184);
+        doc.text('Drift physics summary unavailable.', 18, y); y += 6;
+      }
+
+      // ── SUSPECT RANKINGS ──────────────────────────────────────────────────
+      sectionHeader('04  SUSPECT VESSEL RANKINGS');
+
+      // Table header
+      checkY(10);
+      doc.setFillColor(15, 23, 42);
+      doc.rect(14, y, W - 28, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      const cols = [18, 28, 75, 120, 145, 165, 185];
+      ['#', 'MMSI', 'VESSEL', 'TYPE', 'SCORE', 'PHYSICS', 'PRIORITY'].forEach((h, i) => {
+        doc.text(h, cols[i], y + 5);
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `slicktrace-dossier-${report.incident_id ?? 'report'}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      y += 9;
+
+      rankings.forEach((r, idx) => {
+        checkY(8);
+        if (idx % 2 === 0) {
+          doc.setFillColor(10, 16, 29);
+          doc.rect(14, y - 1, W - 28, 7, 'F');
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        // rank color
+        const rankColor: [number,number,number] = r.rank === 1 ? [244,63,94] : r.rank === 2 ? [251,191,36] : [100,116,139];
+        doc.setTextColor(...rankColor);
+        doc.text(`#${r.rank}`, cols[0], y + 4);
+        doc.setTextColor(226, 232, 240);
+        doc.text(String(r.mmsi), cols[1], y + 4);
+        doc.text(r.vessel_name?.substring(0, 22) ?? '', cols[2], y + 4);
+        doc.text(r.vessel_type?.substring(0, 18) ?? '', cols[3], y + 4);
+        doc.text(String(r.final_score), cols[4], y + 4);
+        doc.text(String(r.physics_score), cols[5], y + 4);
+        // priority badge color
+        const pColor: [number,number,number] = r.investigation_priority?.includes('HIGH')
+          ? [244,63,94] : r.investigation_priority?.includes('MEDIUM')
+          ? [251,191,36] : [52,211,153];
+        doc.setTextColor(...pColor);
+        doc.text(r.investigation_priority?.replace(' PRIORITY','') ?? '', cols[6], y + 4);
+        y += 7;
+      });
+
+      y += 4;
+
+      // ── PRIME SUSPECT DEEP-DIVE ───────────────────────────────────────────
+      const top = rankings[0];
+      if (top) {
+        sectionHeader('05  PRIME SUSPECT — FULL EVIDENCE PROFILE');
+        field('Vessel Name', top.vessel_name ?? 'N/A');
+        field('MMSI', String(top.mmsi));
+        field('Type', top.vessel_type ?? 'N/A');
+        field('AIS Reliability', top.ais_reliability ?? 'N/A');
+        field('Initial Score', String(top.initial_score));
+        field('Physics Score', String(top.physics_score));
+        field('Final Score', `${top.final_score}/100`);
+        field('Rank Change', top.rank_change > 0 ? `+${top.rank_change}` : String(top.rank_change));
+        field('Investigation Priority', top.investigation_priority ?? 'N/A');
+
+        y += 2;
+        // Evidence for
+        checkY(10);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(52, 211, 153);
+        doc.text('CORROBORATING EVIDENCE', 18, y); y += 6;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(203, 213, 225);
+        (top.evidence_for ?? []).forEach(ev => {
+          checkY(6);
+          doc.setTextColor(52, 211, 153); doc.text('+', 18, y);
+          doc.setTextColor(203, 213, 225);
+          const lines = doc.splitTextToSize(ev, W - 44);
+          doc.text(lines, 23, y);
+          y += lines.length * 5 + 1;
+        });
+
+        y += 2;
+        // Evidence against
+        if ((top.evidence_against ?? []).length > 0) {
+          checkY(10);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(244, 63, 94);
+          doc.text('INCONSISTENT EVIDENCE', 18, y); y += 6;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+          (top.evidence_against ?? []).forEach(ev => {
+            checkY(6);
+            doc.setTextColor(244, 63, 94); doc.text('-', 18, y);
+            doc.setTextColor(203, 213, 225);
+            const lines = doc.splitTextToSize(ev, W - 44);
+            doc.text(lines, 23, y);
+            y += lines.length * 5 + 1;
+          });
+        }
+
+        y += 2;
+        // Rank explanation
+        checkY(14);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(168, 85, 247);
+        doc.text('VERIFICATION SHIFT', 18, y); y += 6;
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+        const explLines = doc.splitTextToSize(top.rank_change_explanation ?? '', W - 36);
+        doc.text(explLines, 18, y);
+        y += explLines.length * 5 + 4;
+      }
+
+      // ── PHYSICS METRICS ───────────────────────────────────────────────────
+      const physicsResult = physics?.results?.find(r => r.mmsi === top?.mmsi);
+      if (physicsResult) {
+        sectionHeader('06  PHYSICS VERIFICATION METRICS');
+        field('Vessel', physicsResult.vessel_name ?? 'N/A');
+        field('Physics Consistency', `${physicsResult.physics_consistency_score}/100`);
+        field('Classification', physicsResult.classification ?? 'N/A');
+        field('Spatial Overlap', `${physicsResult.metrics?.spatial_overlap_pct?.toFixed(1)}%`);
+        field('Centroid Error', `${physicsResult.metrics?.centroid_error_km?.toFixed(2)} km`);
+        field('Timing Error', `${physicsResult.metrics?.timing_error_hours?.toFixed(1)} hours`);
+        field('Shape Similarity', `${physicsResult.metrics?.shape_similarity_score?.toFixed(2)}`);
+      }
+
+      // ── FOOTER on all pages ───────────────────────────────────────────────
+      const pageCount = doc.getNumberOfPages();
+      for (let p = 1; p <= pageCount; p++) {
+        doc.setPage(p);
+        doc.setFillColor(6, 11, 20);
+        doc.rect(0, 287, W, 10, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(71, 85, 105); // slate-600
+        doc.text('SlickTrace v2 — Confidential Maritime Forensic Report', 14, 293);
+        doc.text(`Page ${p} of ${pageCount}`, W - 14, 293, { align: 'right' });
+      }
+
+      // ── Save ──────────────────────────────────────────────────────────────
+      doc.save(`slicktrace-dossier-${report.incident_id ?? 'report'}.pdf`);
+
     } catch (err) {
       console.error('Export failed:', err);
-      setExportError('Export failed. Check backend connection.');
+      setExportError('PDF export failed. Check backend connection.');
     } finally {
       setExporting(false);
     }
   };
+
 
   if (!ranking) {
     return (
