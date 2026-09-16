@@ -69,11 +69,13 @@ export const MapEngine: React.FC<MapEngineProps> = ({
 
   // Determine current active particles based on timeline
   const activeParticles = useMemo(() => {
-    if (!drift || !drift.trajectories) return [];
+    if (!drift || !drift.trajectories || drift.trajectories.length === 0) return [];
+    const firstTraj = drift.trajectories[0];
+    if (!firstTraj || firstTraj.length === 0) return [];
     // Calculate which step to show based on 0-100% (assuming max steps = duration)
     // Timeline maps 0 to the start of backward drift, 100 to NOW.
     // So step = currentTime / 100 * total_steps
-    const maxStep = Math.max(...drift.trajectories[0].map(t => t.step));
+    const maxStep = Math.max(...firstTraj.map(t => t.step));
     const currentStep = Math.floor((1 - (currentTime / 100)) * maxStep); // Drift is backward, so 100% (NOW) = step 0
     
     return drift.trajectories.map(traj => {
