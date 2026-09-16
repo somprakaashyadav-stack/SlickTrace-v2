@@ -1,0 +1,148 @@
+{
+  "region": "Offshore Mumbai (Arabian Sea)",
+  "timestamp": "2026-09-12T14:30:00Z",
+  "wind": {
+    "speed_knots": 14.2,
+    "direction_deg": 210.0,
+    "u_ms": 3.65,
+    "v_ms": 6.32
+  },
+  "current": {
+    "speed_knots": 1.4,
+    "direction_deg": 245.0,
+    "u_ms": 0.65,
+    "v_ms": 0.3
+  },
+  "wave_height_m": 1.2,
+  "sea_surface_temp_c": 28.5,
+  "vector_grid": [
+    {
+      "latitude": 18.75,
+      "longitude": 72.15,
+      "wind_speed_knots": 13.9,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.33,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.75,
+      "longitude": 72.25,
+      "wind_speed_knots": 13.9,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.38,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.75,
+      "longitude": 72.35,
+      "wind_speed_knots": 13.9,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.43,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.75,
+      "longitude": 72.45,
+      "wind_speed_knots": 13.9,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.48,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.85,
+      "longitude": 72.15,
+      "wind_speed_knots": 14.1,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.33,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.85,
+      "longitude": 72.25,
+      "wind_speed_knots": 14.1,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.38,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.85,
+      "longitude": 72.35,
+      "wind_speed_knots": 14.1,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.43,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.85,
+      "longitude": 72.45,
+      "wind_speed_knots": 14.1,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.48,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.95,
+      "longitude": 72.15,
+      "wind_speed_knots": 14.3,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.33,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.95,
+      "longitude": 72.25,
+      "wind_speed_knots": 14.3,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.38,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.95,
+      "longitude": 72.35,
+      "wind_speed_knots": 14.3,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.43,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 18.95,
+      "longitude": 72.45,
+      "wind_speed_knots": 14.3,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.48,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 19.05,
+      "longitude": 72.15,
+      "wind_speed_knots": 14.5,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.33,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 19.05,
+      "longitude": 72.25,
+      "wind_speed_knots": 14.5,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.38,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 19.05,
+      "longitude": 72.35,
+      "wind_speed_knots": 14.5,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.43,
+      "current_direction_deg": 245.0
+    },
+    {
+      "latitude": 19.05,
+      "longitude": 72.45,
+      "wind_speed_knots": 14.5,
+      "wind_direction_deg": 210.0,
+      "current_speed_knots": 1.48,
+      "current_direction_deg": 245.0
+    }
+  ]
+}
