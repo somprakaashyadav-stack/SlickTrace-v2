@@ -1,0 +1,9 @@
+{
+  "/dashboard/page": "app/dashboard/page.js",
+  "/datasets/page": "app/datasets/page.js",
+  "/incidents/page": "app/incidents/page.js",
+  "/vessels/page": "app/vessels/page.js",
+  "/satellite/page": "app/satellite/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/incidents/[id]/page": "app/incidents/[id]/page.js"
+}

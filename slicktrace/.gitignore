@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+.env
+*.env.local
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+
+# Data (never commit real data)
+data/imagery/*
+data/ais/*
+data/ocean/*
+!data/imagery/.gitkeep
+!data/ais/.gitkeep
+!data/ocean/.gitkeep
+
+# ML weights (too large for git)
+ml/weights/*.pt
+ml/weights/*.pth
+ml/weights/*.onnx
+ml/weights/*.pkl
+ml/weights/*.ubj
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+secrets/
+infra/.env
+
+# Docker volumes
+.docker/
+
+# Logs
+logs/
+*.log
+
+# Alembic
+backend/alembic/versions/__pycache__/

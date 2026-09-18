@@ -1,0 +1,37 @@
+version: '3.9'
+
+# Development override — hot-reload, exposed ports, no nginx
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: slicktrace_dev
+      POSTGRES_USER: slicktrace
+      POSTGRES_PASSWORD: devpassword
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: devaccess
+      MINIO_ROOT_PASSWORD: devsecret123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_dev_data:/data
+
+volumes:
+  postgres_dev_data:
+  minio_dev_data:

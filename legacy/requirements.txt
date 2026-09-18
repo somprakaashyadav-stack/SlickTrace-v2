@@ -1,0 +1,11 @@
+streamlit
+torch
+torchvision
+opendrift
+pandas
+geopandas
+folium
+streamlit-folium
+scikit-learn
+matplotlib
+plotly

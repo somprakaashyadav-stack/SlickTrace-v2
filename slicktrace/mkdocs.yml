@@ -1,0 +1,12 @@
+site_name: SlickTrace v2 Documentation
+site_description: Professional Maritime Oil-Spill Investigation & Vessel Attribution Platform
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: indigo
+    accent: light blue
+nav:
+  - Overview: index.md
+  - Architecture: architecture.md
+  - Pipeline & Algorithms: pipeline.md

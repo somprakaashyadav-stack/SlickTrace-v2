@@ -1,0 +1,10 @@
+opendrift==1.11.1
+netCDF4==1.6.5
+xarray==2024.5.0
+scipy==1.13.1
+numpy==1.26.4
+cdsapi==0.7.0
+copernicusmarine==1.1.1
+requests==2.32.3
+loguru==0.7.2
+pytest==8.2.0
